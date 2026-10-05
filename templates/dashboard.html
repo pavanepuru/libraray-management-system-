@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mayura Peacock LMS{% endblock %}
+
+{% block content %}
+<!-- Hero Plumage Banner -->
+<div class="hero-plumage">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <i class="fa-solid fa-feather-pointed"></i> CSE DEPARTMENT PORTAL
+    </div>
+    <h1>Welcome to Mayura Library Portal</h1>
+    <p>
+      Intelligent academic library circulation system tailored with vibrant peacock jewel-tones.
+      Tracking catalog inventory, active loans, and dynamic overdue fees for the 4th B.Tech CSE cohort.
+    </p>
+  </div>
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <button class="btn-ui btn-ui-primary" onclick="openModal('quickIssueModal')">
+      <i class="fa-solid fa-book-medical"></i> Issue Book
+    </button>
+    <a href="{{ url_for('students') }}" class="btn-ui btn-ui-secondary">
+      <i class="fa-solid fa-users"></i> View 31 Students
+    </a>
+  </div>
+</div>
+
+<!-- KPI Metric Cards Row -->
+<div class="metrics-row">
+  <div class="metric-card cyan">
+    <div>
+      <div class="metric-title">Catalog Titles</div>
+      <div class="metric-value">{{ stats.total_books }}</div>
+      <div class="metric-sub">{{ stats.total_copies }} total physical copies</div>
+    </div>
+    <div class="metric-icon-wrap">
+      <i class="fa-solid fa-book"></i>
+    </div>
+  </div>
+
+  <div class="metric-card emerald">
+    <div>
+      <div class="metric-title">Available Stock</div>
+      <div class="metric-value">{{ stats.available_copies }}</div>
+      <div class="metric-sub">Ready on shelves for loan</div>
+    </div>
+    <div class="metric-icon-wrap">
+      <i class="fa-solid fa-boxes-stacked"></i>
+    </div>
+  </div>
+
+  <div class="metric-card cyan">
+    <div>
+      <div class="metric-title">Active Loans</div>
+      <div class="metric-value" style="color: var(--peacock-cyan);">{{ stats.active_issues }}</div>
+      <div class="metric-sub">Currently with students</div>
+    </div>
+    <div class="metric-icon-wrap">
+      <i class="fa-solid fa-hand-holding-hand"></i>
+    </div>
+  </div>
+
+  <div class="metric-card crimson">
+    <div>
+      <div class="metric-title">Overdue Alert</div>
+      <div class="metric-value" style="color: var(--peacock-crimson);">{{ stats.overdue_count }}</div>
+      <div class="metric-sub">₹{{ "%.1f"|format(stats.unpaid_fines) }} fines accumulated</div>
+    </div>
+    <div class="metric-icon-wrap">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+  </div>
+
+  <div class="metric-card gold">
+    <div>
+      <div class="metric-title">Class Cohort</div>
+      <div class="metric-value" style="color: var(--peacock-gold);">{{ stats.total_students }}</div>
+      <div class="metric-sub">4th B.Tech CSE Registered</div>
+    </div>
+    <div class="metric-icon-wrap">
+      <i class="fa-solid fa-user-graduate"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1.6rem; margin-bottom: 2rem;">
+  <div class="glass-panel" style="margin-bottom: 0;">
+    <div class="panel-header">
+      <div class="panel-heading">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Collection Distribution</span>
+      </div>
+      <span class="tag-badge tag-cyan">Live Catalog</span>
+    </div>
+    <div style="height: 270px; position: relative;">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+  <div class="glass-panel" style="margin-bottom: 0;">
+    <div class="panel-header">
+      <div class="panel-heading">
+        <i class="fa-solid fa-chart-simple" style="color: var(--peacock-emerald);"></i>
+        <span>Circulation Status</span>
+      </div>
+      <span class="tag-badge tag-emerald">Real-time</span>
+    </div>
+    <div style="height: 270px; position: relative;">
+      <canvas id="circulationChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Transactions Panel -->
+<div class="glass-panel">
+  <div class="panel-header">
+    <div class="panel-heading">
+      <i class="fa-solid fa-clock-rotate-left" style="color: var(--peacock-gold);"></i>
+      <span>Recent Circulation Activity</span>
+    </div>
+    <a href="{{ url_for('issues') }}" class="btn-ui btn-ui-secondary btn-ui-sm">
+      View All Records <i class="fa-solid fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th>Loan ID</th>
+          <th>Student Details</th>
+          <th>Book Title</th>
+          <th>Issue Date</th>
+          <th>Due Date</th>
+          <th>Status</th>
+          <th>Fine</th>
+          <th style="text-align: right;">Circulation Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in recent_transactions %}
+          <tr>
+            <td style="font-family: monospace; color: var(--peacock-cyan); font-weight: 700;">#LN-{{ row.id }}</td>
+            <td>
+              <div style="font-weight: 700; color: #fff;">{{ row.student_name }}</div>
+              <div style="font-size: 0.78rem; color: var(--peacock-gold); font-family: monospace;">{{ row.roll_number }} • {{ row.branch }}</div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-primary);">{{ row.book_title }}</div>
+              <div style="font-size: 0.74rem; color: var(--text-secondary);">{{ row.category }}</div>
+            </td>
+            <td style="font-size: 0.85rem;">{{ row.issue_date }}</td>
+            <td style="font-size: 0.85rem; font-weight: 600; {% if row.status == 'overdue' %}color: var(--peacock-crimson); font-weight: 800;{% endif %}">
+              {{ row.due_date }}
+            </td>
+            <td>
+              {% if row.status == 'issued' %}
+                <span class="tag-badge tag-cyan"><i class="fa-solid fa-circle" style="font-size: 5px;"></i> Active</span>
+              {% elif row.status == 'overdue' %}
+                <span class="tag-badge tag-crimson"><i class="fa-solid fa-circle-exclamation"></i> Overdue</span>
+              {% elif row.status == 'returned' %}
+                <span class="tag-badge tag-emerald"><i class="fa-solid fa-check"></i> Returned</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if row.fine_amount > 0 %}
+                <span style="color: var(--peacock-crimson); font-weight: 800;">₹{{ "%.1f"|format(row.fine_amount) }}</span>
+                {% if row.fine_paid %}
+                  <span class="tag-badge tag-emerald" style="font-size: 0.65rem; padding: 2px 6px;">Paid</span>
+                {% else %}
+                  <span class="tag-badge tag-crimson" style="font-size: 0.65rem; padding: 2px 6px;">Unpaid</span>
+                {% endif %}
+              {% else %}
+                <span style="color: var(--text-muted);">-</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              {% if row.status != 'returned' %}
+                <button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="processReturn({{ row.id }})">
+                  <i class="fa-solid fa-arrow-turn-down"></i> Return
+                </button>
+              {% else %}
+                <span style="font-size: 0.8rem; color: var(--peacock-emerald); font-weight: 600;">
+                  <i class="fa-solid fa-circle-check"></i> Completed
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Category Doughnut Chart
+  const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+  const catLabels = {{ category_labels|tojson }};
+  const catData = {{ category_counts|tojson }};
+
+  new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+      labels: catLabels,
+      datasets: [{
+        data: catData,
+        backgroundColor: [
+          '#00f5d4', '#0077b6', '#02c39a', '#ffd166',
+          '#7209b7', '#4361ee', '#f77f00', '#0582ca'
+        ],
+        borderColor: '#020b14',
+        borderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            color: '#94d2bd',
+            font: { size: 11, family: 'Plus Jakarta Sans' },
+            boxWidth: 12
+          }
+        }
+      },
+      cutout: '68%'
+    }
+  });
+
+  // Circulation Bar Chart
+  const circCtx = document.getElementById('circulationChart').getContext('2d');
+  new Chart(circCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Available', 'Active Issued', 'Overdue', 'Returned Logs'],
+      datasets: [{
+        label: 'Books Count',
+        data: [{{ stats.available_copies }}, {{ stats.active_issues }}, {{ stats.overdue_count }}, {{ stats.returned_count }}],
+        backgroundColor: [
+          'rgba(2, 195, 154, 0.8)',
+          'rgba(0, 180, 216, 0.8)',
+          'rgba(239, 71, 111, 0.8)',
+          'rgba(114, 9, 183, 0.8)'
+        ],
+        borderColor: ['#02c39a', '#00b4d8', '#ef476f', '#7209b7'],
+        borderWidth: 1.5,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          ticks: { color: '#94d2bd', font: { size: 11 } },
+          grid: { display: false }
+        },
+        y: {
+          ticks: { color: '#94d2bd', stepSize: 2 },
+          grid: { color: 'rgba(0, 245, 212, 0.08)' }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

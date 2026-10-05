@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Student Roster (31 Students) - Mayura LMS{% endblock %}
+
+{% block content %}
+<div class="glass-panel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-heading">
+        <i class="fa-solid fa-graduation-cap" style="color: var(--peacock-gold);"></i>
+        <span>Registered Students Roster ({{ students|length }} Students)</span>
+      </div>
+      <div style="font-size: 0.82rem; color: var(--peacock-cyan); margin-top: 4px;">
+        <i class="fa-solid fa-circle-check"></i> Official 4th B.Tech CSE Class Cohort Loaded
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <a href="{{ url_for('export_students_csv') }}" class="btn-ui btn-ui-secondary btn-ui-sm">
+        <i class="fa-solid fa-file-arrow-down"></i> Export Roster CSV
+      </a>
+      <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="openModal('addStudentModal')">
+        <i class="fa-solid fa-user-plus"></i> Add Student
+      </button>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="toolbar-row">
+    <div class="peacock-searchbox">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="studentSearch" placeholder="Search by Student Name, Roll No (e.g. 23GK1A0501), or Branch...">
+    </div>
+  </div>
+
+  <!-- Students Table -->
+  <div class="table-wrap">
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th style="width: 50px;">Sl</th>
+          <th>Roll Number</th>
+          <th>Student Name</th>
+          <th>Academic Year</th>
+          <th>Branch</th>
+          <th>Active Loans</th>
+          <th style="text-align: right;">Library Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in students %}
+          <tr class="student-row" 
+              data-roll="{{ student.roll_number|lower }}" 
+              data-name="{{ student.name|lower }}" 
+              data-branch="{{ student.branch|lower }}">
+            <td style="color: var(--text-muted); font-weight: 700;">{{ student.sl_no }}</td>
+            <td>
+              <span class="tag-badge tag-gold" style="font-family: monospace; font-size: 0.85rem;">
+                {{ student.roll_number }}
+              </span>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--peacock-blue), var(--peacock-teal)); display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 0.85rem; border: 1px solid var(--peacock-cyan);">
+                  {{ student.name[0] }}
+                </div>
+                <div>
+                  <div style="font-weight: 700; color: #ffffff;">{{ student.name }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ student.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="tag-badge tag-cyan">{{ student.year_of_study }}</span>
+            </td>
+            <td>
+              <span class="tag-badge tag-emerald">{{ student.branch }}</span>
+            </td>
+            <td>
+              {% if student.active_loan_count > 0 %}
+                <span class="tag-badge tag-emerald">
+                  <i class="fa-solid fa-book"></i> {{ student.active_loan_count }} Active
+                </span>
+              {% else %}
+                <span style="font-size: 0.8rem; color: var(--text-muted);">0 active loans</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; gap: 6px;">
+                <button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="viewStudentCard({{ student.id }})" title="View Digital Peacock ID Pass">
+                  <i class="fa-solid fa-id-card"></i> Digital Pass
+                </button>
+                <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="openIssueModalForStudent({{ student.id }})" title="Issue Book to this student">
+                  <i class="fa-solid fa-plus"></i> Issue
+                </button>
+                <button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="openEditStudentModal({{ student.id }}, '{{ student.roll_number }}', '{{ student.name|escape }}', '{{ student.year_of_study }}', '{{ student.branch }}', '{{ student.email }}', '{{ student.phone }}')">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Add Student -->
+<div id="addStudentModal" class="modal-overlay">
+  <div class="modal-dialog">
+    <button class="modal-close" onclick="closeModal('addStudentModal')">&times;</button>
+    <div style="margin-bottom: 1.2rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.6rem;">
+      <h3 style="font-size: 1.25rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-user-plus" style="color: var(--peacock-cyan);"></i> Enroll New Student
+      </h3>
+    </div>
+    <form action="{{ url_for('add_student') }}" method="POST">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 4px;">Roll Number *</label>
+          <input type="text" name="roll_number" style="width: 100%; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-input); color: #fff;" placeholder="e.g. 23GK1A0560" required>
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 4px;">Student Name *</label>
+          <input type="text" name="name" style="width: 100%; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-input); color: #fff;" placeholder="e.g. K. ROHITH" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 4px;">Year of Study *</label>
+          <select name="year_of_study" class="peacock-dropdown" style="width: 100%; border-radius: var(--radius-sm);" required>
+            <option value="4TH B.TECH" selected>4TH B.TECH</option>
+            <option value="3RD B.TECH">3RD B.TECH</option>
+            <option value="2ND B.TECH">2ND B.TECH</option>
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 4px;">Branch *</label>
+          <input type="text" name="branch" value="CSE" style="width: 100%; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-input); color: #fff;" required>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem;">
+        <button type="button" class="btn-ui btn-ui-secondary" onclick="closeModal('addStudentModal')">Cancel</button>
+        <button type="submit" class="btn-ui btn-ui-primary"><i class="fa-solid fa-check"></i> Save Student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Edit Student -->
+<div id="editStudentModal" class="modal-overlay">
+  <div class="modal-dialog">
+    <button class="modal-close" onclick="closeModal('editStudentModal')">&times;</button>
+    <div style="margin-bottom: 1.2rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.6rem;">
+      <h3 style="font-size: 1.25rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-user-pen" style="color: var(--peacock-gold);"></i> Edit Student
+      </h3>
+    </div>
+    <form id="editStudentForm" action="" method="POST">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 4px;">Roll Number *</label>
+          <input type="text" id="edit_roll" name="roll_number" style="width: 100%; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-input); color: #fff;" required>
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 4px;">Student Name *</label>
+          <input type="text" id="edit_name" name="name" style="width: 100%; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-input); color: #fff;" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 4px;">Year of Study *</label>
+          <input type="text" id="edit_year" name="year_of_study" style="width: 100%; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-input); color: #fff;" required>
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 4px;">Branch *</label>
+          <input type="text" id="edit_branch" name="branch" style="width: 100%; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-input); color: #fff;" required>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem;">
+        <button type="button" class="btn-ui btn-ui-secondary" onclick="closeModal('editStudentModal')">Cancel</button>
+        <button type="submit" class="btn-ui btn-ui-primary"><i class="fa-solid fa-floppy-disk"></i> Update Student</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openEditStudentModal(id, roll, name, year, branch, email, phone) {
+    document.getElementById('editStudentForm').action = `/students/edit/${id}`;
+    document.getElementById('edit_roll').value = roll;
+    document.getElementById('edit_name').value = name;
+    document.getElementById('edit_year').value = year;
+    document.getElementById('edit_branch').value = branch;
+    openModal('editStudentModal');
+  }
+
+  function openIssueModalForStudent(studentId) {
+    const studentSelect = document.querySelector('#quickIssueModal select[name="student_id"]');
+    if (studentSelect) {
+      studentSelect.value = studentId;
+      updateStudentPreview(studentSelect);
+    }
+    openModal('quickIssueModal');
+  }
+</script>
+{% endblock %}

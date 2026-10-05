@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mayura - Peacock Library Management System (CSE 4th B.Tech)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="static/css/peacock_theme.css">
+  <style>
+    /* Inlined fallbacks if static directory is accessed via direct file:/// protocol */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Toast Alert */
+    .app-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #031c2d;
+      border: 1px solid var(--peacock-cyan);
+      padding: 14px 22px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 245, 212, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #fff;
+      z-index: 3000;
+      transform: translateY(120px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .app-toast.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- Left Sidebar Navigation -->
+  <aside class="app-sidebar no-print">
+    <a href="#" class="sidebar-brand" onclick="switchTab('dashboard')">
+      <img src="static/images/peacock_logo.svg" alt="Peacock Logo" class="brand-icon">
+      <div>
+        <div class="brand-title">MAYURA LMS</div>
+        <div class="brand-badge">🦚 CSE LIBRARY</div>
+      </div>
+    </a>
+
+    <div class="sidebar-nav-title">Navigation</div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="javascript:void(0)" class="nav-item-link active" id="nav-dashboard" onclick="switchTab('dashboard')">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="javascript:void(0)" class="nav-item-link" id="nav-books" onclick="switchTab('books')">
+          <i class="fa-solid fa-book-bookmark"></i>
+          <span>Book Catalog</span>
+          <span class="badge-count" id="navBookCount">16</span>
+        </a>
+      </li>
+      <li>
+        <a href="javascript:void(0)" class="nav-item-link" id="nav-students" onclick="switchTab('students')">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>Students Roster</span>
+          <span class="badge-count">31</span>
+        </a>
+      </li>
+      <li>
+        <a href="javascript:void(0)" class="nav-item-link" id="nav-issues" onclick="switchTab('issues')">
+          <i class="fa-solid fa-arrow-right-arrow-left"></i>
+          <span>Issue & Return</span>
+          <span class="badge-count" id="navActiveCount" style="background: rgba(239, 71, 111, 0.15); color: var(--peacock-crimson);">3</span>
+        </a>
+      </li>
+      <li>
+        <a href="javascript:void(0)" class="nav-item-link" id="nav-reports" onclick="switchTab('reports')">
+          <i class="fa-solid fa-file-invoice"></i>
+          <span>Reports & Export</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- Bottom Cohort Badge -->
+    <div class="sidebar-footer">
+      <div class="cohort-chip">
+        <div class="chip-avatar">4th</div>
+        <div>
+          <div class="chip-text">CSE Department</div>
+          <div class="chip-sub">31 Students Loaded</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="app-main">
+    <!-- Top Bar -->
+    <header class="top-appbar no-print">
+      <div class="appbar-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="globalSearch" placeholder="Search catalog, students, roll number..." oninput="filterAll(this.value)">
+      </div>
+
+      <div class="appbar-actions">
+        <span class="tag-badge tag-emerald">
+          <i class="fa-solid fa-circle" style="font-size: 6px;"></i> Standalone Mode (No Server Needed)
+        </span>
+        <button class="btn-quick-issue" onclick="openIssueModal()">
+          <i class="fa-solid fa-plus-circle"></i> Quick Issue
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="page-container">
+
+      <!-- ==============================================
+           VIEW 1: DASHBOARD
+           ============================================== -->
+      <section id="view-dashboard" class="tab-content active">
+        <!-- Hero Banner -->
+        <div class="hero-plumage">
+          <div class="hero-content">
+            <div class="hero-badge">
+              <i class="fa-solid fa-feather-pointed"></i> CSE 4TH B.TECH PORTAL
+            </div>
+            <h1>Welcome to Mayura Library Portal</h1>
+            <p>
+              An intelligent academic library management system styled with radiant peacock jewel-tones. 
+              Loaded with official department records for 31 CSE students with live inventory & overdue tracking.
+            </p>
+          </div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn-ui btn-ui-primary" onclick="openIssueModal()">
+              <i class="fa-solid fa-book-medical"></i> Issue Book
+            </button>
+            <button class="btn-ui btn-ui-secondary" onclick="switchTab('students')">
+              <i class="fa-solid fa-users"></i> View 31 Students
+            </button>
+          </div>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="metrics-row">
+          <div class="metric-card cyan">
+            <div>
+              <div class="metric-title">Catalog Titles</div>
+              <div class="metric-value" id="kpiBooks">16</div>
+              <div class="metric-sub" id="kpiTotalCopies">96 physical copies</div>
+            </div>
+            <div class="metric-icon-wrap"><i class="fa-solid fa-book"></i></div>
+          </div>
+
+          <div class="metric-card emerald">
+            <div>
+              <div class="metric-title">Available Stock</div>
+              <div class="metric-value" id="kpiAvailCopies">86</div>
+              <div class="metric-sub">On shelves ready to issue</div>
+            </div>
+            <div class="metric-icon-wrap"><i class="fa-solid fa-boxes-stacked"></i></div>
+          </div>
+
+          <div class="metric-card cyan">
+            <div>
+              <div class="metric-title">Active Loans</div>
+              <div class="metric-value" style="color: var(--peacock-cyan);" id="kpiActiveLoans">7</div>
+              <div class="metric-sub">Currently with students</div>
+            </div>
+            <div class="metric-icon-wrap"><i class="fa-solid fa-hand-holding-hand"></i></div>
+          </div>
+
+          <div class="metric-card crimson">
+            <div>
+              <div class="metric-title">Overdue Alert</div>
+              <div class="metric-value" style="color: var(--peacock-crimson);" id="kpiOverdue">3</div>
+              <div class="metric-sub" id="kpiFines">₹36.0 pending fines</div>
+            </div>
+            <div class="metric-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          </div>
+
+          <div class="metric-card gold">
+            <div>
+              <div class="metric-title">Class Cohort</div>
+              <div class="metric-value" style="color: var(--peacock-gold);">31</div>
+              <div class="metric-sub">4th B.Tech CSE Enrolled</div>
+            </div>
+            <div class="metric-icon-wrap"><i class="fa-solid fa-user-graduate"></i></div>
+          </div>
+        </div>
+
+        <!-- Analytics Charts Row -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1.6rem; margin-bottom: 2rem;">
+          <div class="glass-panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+              <div class="panel-heading"><i class="fa-solid fa-chart-pie"></i> Collection Distribution</div>
+              <span class="tag-badge tag-cyan">Live Catalog</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="categoryChart"></canvas>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="margin-bottom: 0;">
+            <div class="panel-header">
+              <div class="panel-heading"><i class="fa-solid fa-chart-simple" style="color: var(--peacock-emerald);"></i> Circulation Status</div>
+              <span class="tag-badge tag-emerald">Real-time</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="circulationChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-heading"><i class="fa-solid fa-clock-rotate-left" style="color: var(--peacock-gold);"></i> Recent Circulation Activity</div>
+            <button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="switchTab('issues')">
+              View All Records <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+          <div class="table-wrap">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>Loan ID</th>
+                  <th>Student Details</th>
+                  <th>Book Title</th>
+                  <th>Issue Date</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Fine</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="dashRecentTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==============================================
+           VIEW 2: STUDENTS ROSTER (31 STUDENTS)
+           ============================================== -->
+      <section id="view-students" class="tab-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-heading">
+                <i class="fa-solid fa-graduation-cap" style="color: var(--peacock-gold);"></i>
+                <span>Registered Students Roster (31 Students)</span>
+              </div>
+              <div style="font-size: 0.82rem; color: var(--peacock-cyan); margin-top: 4px;">
+                <i class="fa-solid fa-circle-check"></i> Official 4th B.Tech CSE Class Sheet Imported
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="exportStudentsCSV()">
+                <i class="fa-solid fa-file-arrow-down"></i> Export Roster CSV
+              </button>
+              <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="openAddStudentModal()">
+                <i class="fa-solid fa-user-plus"></i> Add Student
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-row">
+            <div class="peacock-searchbox">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="studentSearchInput" placeholder="Filter by Name, Roll No (e.g. 23GK1A0501), or Branch..." oninput="renderStudentsTable(this.value)">
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th style="width: 45px;">Sl</th>
+                  <th>Roll Number</th>
+                  <th>Student Name</th>
+                  <th>Academic Year</th>
+                  <th>Branch</th>
+                  <th>Active Loans</th>
+                  <th style="text-align: right;">Library Actions</th>
+                </tr>
+              </thead>
+              <tbody id="studentsTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==============================================
+           VIEW 3: BOOK CATALOG
+           ============================================== -->
+      <section id="view-books" class="tab-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div class="panel-heading">
+              <i class="fa-solid fa-book-journal-whills" style="color: var(--peacock-cyan);"></i>
+              <span id="booksHeaderTitle">Library Catalog (16 Titles)</span>
+            </div>
+            <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="openAddBookModal()">
+              <i class="fa-solid fa-plus-circle"></i> Add New Book
+            </button>
+          </div>
+
+          <div class="toolbar-row">
+            <div class="peacock-searchbox">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="bookSearchInput" placeholder="Search by Title, Author, or ISBN..." oninput="renderBooksGrid()">
+            </div>
+            <select id="bookCatFilter" class="peacock-dropdown" onchange="renderBooksGrid()">
+              <option value="all">All Categories</option>
+            </select>
+          </div>
+
+          <div class="book-cards-grid" id="booksGrid"></div>
+        </div>
+      </section>
+
+
+      <!-- ==============================================
+           VIEW 4: ISSUE & RETURN CIRCULATION DESK
+           ============================================== -->
+      <section id="view-issues" class="tab-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-heading">
+                <i class="fa-solid fa-arrow-right-arrow-left" style="color: var(--peacock-cyan);"></i>
+                <span>Circulation Desk • Issue & Return Management</span>
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px;">
+                Enforce 14-day due dates, calculate ₹2/day late fines, and restock inventory
+              </div>
+            </div>
+            <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="openIssueModal()">
+              <i class="fa-solid fa-plus-circle"></i> Issue New Book
+            </button>
+          </div>
+
+          <div class="toolbar-row">
+            <div class="peacock-searchbox">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="issueSearchInput" placeholder="Search by Roll No, Student Name, or Book Title..." oninput="renderIssuesTable()">
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-ui btn-ui-sm btn-ui-primary" id="flt-all" onclick="filterIssues('all')">All</button>
+              <button class="btn-ui btn-ui-sm btn-ui-secondary" id="flt-issued" onclick="filterIssues('issued')">Active</button>
+              <button class="btn-ui btn-ui-sm btn-ui-secondary" id="flt-overdue" onclick="filterIssues('overdue')">Overdue</button>
+              <button class="btn-ui btn-ui-sm btn-ui-secondary" id="flt-returned" onclick="filterIssues('returned')">Returned</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table-custom">
+              <thead>
+                <tr>
+                  <th>Loan ID</th>
+                  <th>Student Info</th>
+                  <th>Book Title & Shelf</th>
+                  <th>Issue Date</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Fine</th>
+                  <th style="text-align: right;">Circulation Action</th>
+                </tr>
+              </thead>
+              <tbody id="issuesTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==============================================
+           VIEW 5: REPORTS & AUDITS
+           ============================================== -->
+      <section id="view-reports" class="tab-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-heading">
+                <i class="fa-solid fa-file-invoice" style="color: var(--peacock-gold);"></i>
+                <span>Library Audit & Circulation Reports</span>
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px;">
+                Download CSV spreadsheets or print official audit records
+              </div>
+            </div>
+            <button class="btn-ui btn-ui-gold btn-ui-sm" onclick="window.print()">
+              <i class="fa-solid fa-print"></i> Print Official Report
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; margin-bottom: 2rem;">
+            <div style="background: rgba(0, 245, 212, 0.05); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.4rem; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <h4 style="color: #fff; font-size: 1rem; margin-bottom: 4px;">Transactions Log</h4>
+                <p style="font-size: 0.78rem; color: var(--text-secondary);">All borrowing & return history</p>
+              </div>
+              <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="exportIssuesCSV()">
+                <i class="fa-solid fa-file-csv"></i> Download CSV
+              </button>
+            </div>
+
+            <div style="background: rgba(2, 195, 154, 0.05); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.4rem; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <h4 style="color: #fff; font-size: 1rem; margin-bottom: 4px;">Student Roster (31)</h4>
+                <p style="font-size: 0.78rem; color: var(--text-secondary);">Enrolled CSE cohort contacts</p>
+              </div>
+              <button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="exportStudentsCSV()">
+                <i class="fa-solid fa-file-csv"></i> Download CSV
+              </button>
+            </div>
+
+            <div style="background: rgba(255, 209, 102, 0.05); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.4rem; display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <h4 style="color: #fff; font-size: 1rem; margin-bottom: 4px;">Book Stock Audit</h4>
+                <p style="font-size: 0.78rem; color: var(--text-secondary);">Complete titles inventory</p>
+              </div>
+              <button class="btn-ui btn-ui-gold btn-ui-sm" onclick="exportBooksCSV()">
+                <i class="fa-solid fa-file-csv"></i> Download CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ==============================================
+     MODALS
+     ============================================== -->
+
+<!-- Quick Issue Modal -->
+<div id="quickIssueModal" class="modal-overlay no-print">
+  <div class="modal-dialog">
+    <button class="modal-close" onclick="closeModal('quickIssueModal')">&times;</button>
+    <div style="margin-bottom: 1.2rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.8rem;">
+      <h3 style="font-size: 1.3rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-feather-pointed" style="color: var(--peacock-gold);"></i>
+        <span>Issue Book to Student</span>
+      </h3>
+    </div>
+    <form onsubmit="handleIssueSubmit(event)">
+      <div style="margin-bottom: 1.2rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 6px;">
+          <i class="fa-solid fa-user-graduate"></i> Select Student (From 31 Class Sheet)
+        </label>
+        <select id="modalStudentSelect" class="peacock-dropdown" style="width: 100%; border-radius: var(--radius-sm);" required onchange="previewSelectedStudent(this.value)">
+          <option value="">-- Choose Student by Roll No / Name --</option>
+        </select>
+        <div id="modalStudentPreview" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0, 245, 212, 0.05); border-radius: 8px; border: 1px dashed rgba(0, 245, 212, 0.3);"></div>
+      </div>
+
+      <div style="margin-bottom: 1.2rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 6px;">
+          <i class="fa-solid fa-book"></i> Select Book from Catalog
+        </label>
+        <select id="modalBookSelect" class="peacock-dropdown" style="width: 100%; border-radius: var(--radius-sm);" required onchange="previewSelectedBook(this.value)">
+          <option value="">-- Choose Book --</option>
+        </select>
+        <div id="modalBookPreview" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0, 245, 212, 0.05); border-radius: 8px; border: 1px dashed rgba(0, 245, 212, 0.3);"></div>
+      </div>
+
+      <div style="margin-bottom: 1.2rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 6px;">
+          <i class="fa-regular fa-calendar-days"></i> Loan Period
+        </label>
+        <select id="modalLoanDays" class="peacock-dropdown" style="width: 100%; border-radius: var(--radius-sm);">
+          <option value="14" selected>Standard 14 Days</option>
+          <option value="21">Extended 21 Days (Semester Reference)</option>
+          <option value="7">Short-term 7 Days (Lab manual)</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem;">
+        <button type="button" class="btn-ui btn-ui-secondary" onclick="closeModal('quickIssueModal')">Cancel</button>
+        <button type="submit" class="btn-ui btn-ui-primary"><i class="fa-solid fa-check"></i> Confirm Issue</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Digital Student ID Pass Modal -->
+<div id="studentCardModal" class="modal-overlay">
+  <div class="modal-dialog" style="max-width: 500px;">
+    <button class="modal-close no-print" onclick="closeModal('studentCardModal')">&times;</button>
+    <div class="no-print" style="margin-bottom: 1.2rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.6rem;">
+      <h3 style="font-size: 1.2rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-id-badge" style="color: var(--peacock-gold);"></i> Digital Library Pass
+      </h3>
+    </div>
+    
+    <div class="printable-card-area">
+      <div class="pvc-library-pass">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 245, 212, 0.2); padding-bottom: 0.8rem; margin-bottom: 1.2rem;">
+          <div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--peacock-gold); letter-spacing: 1px; text-transform: uppercase;">
+              DEPARTMENT OF CSE • LIBRARY PASS
+            </div>
+            <div style="font-size: 0.65rem; color: var(--peacock-teal);">4TH B.TECH OFFICIAL MEMBER CARD</div>
+          </div>
+          <div class="tag-badge tag-cyan">VERIFIED</div>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 1.2rem;">
+          <div style="width: 72px; height: 84px; border-radius: 10px; background: linear-gradient(135deg, #005082, #0077b6); border: 2px solid var(--peacock-gold); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: #ffd166; font-weight: 800;">
+            <span id="passAvatarInitial">A</span>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Student Name</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: #fff;" id="passStudentName">A.RAJESH</div>
+            
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; margin-top: 4px;">Roll Number</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--peacock-gold); font-family: monospace;" id="passRollNumber">23GK1A0501</div>
+
+            <div style="display: flex; gap: 14px; margin-top: 4px;">
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-secondary);">Branch</div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: #fff;" id="passBranch">CSE</div>
+              </div>
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-secondary);">Year</div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: #fff;" id="passYear">4TH B.TECH</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px;">
+          <div><i class="fa-solid fa-envelope" style="color: var(--peacock-cyan); width: 16px;"></i> <span id="passEmail"></span></div>
+          <div><i class="fa-solid fa-phone" style="color: var(--peacock-gold); width: 16px;"></i> <span id="passPhone"></span></div>
+        </div>
+
+        <div style="margin-top: 12px; border-top: 1px dashed rgba(0, 245, 212, 0.25); padding-top: 8px;">
+          <div style="font-size: 0.68rem; color: var(--peacock-teal); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Currently Borrowed Books</div>
+          <div id="passActiveLoans"></div>
+        </div>
+
+        <div style="background: #ffffff; border-radius: 6px; padding: 6px 10px; text-align: center; margin-top: 1rem;">
+          <div style="height: 30px; background: repeating-linear-gradient(90deg, #000 0px, #000 2px, #fff 2px, #fff 4px, #000 4px, #000 7px, #fff 7px, #fff 9px); margin-bottom: 2px;"></div>
+          <div style="font-family: monospace; font-size: 0.75rem; font-weight: 700; color: #000;" id="passBarcode">*23GK1A0501*</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem;" class="no-print">
+      <button type="button" class="btn-ui btn-ui-secondary" onclick="closeModal('studentCardModal')">Close</button>
+      <button type="button" class="btn-ui btn-ui-gold" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Pass</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Node -->
+<div id="appToast" class="app-toast"></div>
+
+<!-- Standalone App Data & Engine -->
+<script>
+  // All 31 Students from Department Sheet
+  const INITIAL_STUDENTS = [
+    { id: 1, sl_no: 1, roll: "23GK1A0501", name: "A.RAJESH", year: "4TH B.TECH", branch: "CSE" },
+    { id: 2, sl_no: 2, roll: "23GK1A0502", name: "A.PRAVEEN", year: "4TH B.TECH", branch: "CSE" },
+    { id: 3, sl_no: 3, roll: "23GK1A0503", name: "B.NAGENDRA BABU", year: "4TH B.TECH", branch: "CSE" },
+    { id: 4, sl_no: 4, roll: "23GK1A0504", name: "CH. ANAND KUMAR", year: "4TH B.TECH", branch: "CSE" },
+    { id: 5, sl_no: 5, roll: "23GK1A0505", name: "D.SIRESHA", year: "4TH B.TECH", branch: "CSE" },
+    { id: 6, sl_no: 6, roll: "23GK1A0506", name: "D.BALA ARJUN", year: "4TH B.TECH", branch: "CSE" },
+    { id: 7, sl_no: 7, roll: "23GK1A0508", name: "G.GAYATHRI", year: "4TH B.TECH", branch: "CSE" },
+    { id: 8, sl_no: 8, roll: "23GK1A0510", name: "J.PREETHI", year: "4TH B.TECH", branch: "CSE" },
+    { id: 9, sl_no: 9, roll: "23GK1A0511", name: "J.VIMALA", year: "4TH B.TECH", branch: "CSE" },
+    { id: 10, sl_no: 10, roll: "23GK1A0513", name: "K.DEEPTHI", year: "4TH B.TECH", branch: "CSE" },
+    { id: 11, sl_no: 11, roll: "23GK1A0514", name: "K.V.SAI REDDY", year: "4TH B.TECH", branch: "CSE" },
+    { id: 12, sl_no: 12, roll: "23GK1A0515", name: "K.DINESH", year: "4TH B.TECH", branch: "CSE" },
+    { id: 13, sl_no: 13, roll: "23GK1A0516", name: "K.KEERTHANA", year: "4TH B.TECH", branch: "CSE" },
+    { id: 14, sl_no: 14, roll: "23GK1A0517", name: "K.VASU DEVA RAO", year: "4TH B.TECH", branch: "CSE" },
+    { id: 15, sl_no: 15, roll: "23GK1A0522", name: "O.PRAVEEN", year: "4TH B.TECH", branch: "CSE" },
+    { id: 16, sl_no: 16, roll: "23GL1A0524", name: "P.MOUNIKA", year: "4TH B.TECH", branch: "CSE" },
+    { id: 17, sl_no: 17, roll: "23GL1A0525", name: "P.AKSHAY SAI GOVARDHAN", year: "4TH B.TECH", branch: "CSE" },
+    { id: 18, sl_no: 18, roll: "23GK1A0532", name: "S.JYOSTANA", year: "4TH B.TECH", branch: "CSE" },
+    { id: 19, sl_no: 19, roll: "23GK1A0533", name: "S.THARUN KUMAR", year: "4TH B.TECH", branch: "CSE" },
+    { id: 20, sl_no: 20, roll: "23GK1A0534", name: "S.SUBHASH", year: "4TH B.TECH", branch: "CSE" },
+    { id: 21, sl_no: 21, roll: "23GK1A0436", name: "T.BHANU PRAKASH", year: "4TH B.TECH", branch: "CSE" },
+    { id: 22, sl_no: 22, roll: "23GK1A0437", name: "T.PRANEESH", year: "4TH B.TECH", branch: "CSE" },
+    { id: 23, sl_no: 23, roll: "23GK1A0438", name: "U.VARSHITHA", year: "4TH B.TECH", branch: "CSE" },
+    { id: 24, sl_no: 24, roll: "23GK1A0439", name: "V.ASRITHA", year: "4TH B.TECH", branch: "CSE" },
+    { id: 25, sl_no: 25, roll: "23GK1A0544", name: "B.CHINNARAJU", year: "4TH B.TECH", branch: "CSE" },
+    { id: 26, sl_no: 26, roll: "23GK1A0548", name: "E.PAVAN", year: "4TH B.TECH", branch: "CSE" },
+    { id: 27, sl_no: 27, roll: "23GK1A0549", name: "K.VYSHNAVI", year: "4TH B.TECH", branch: "CSE" },
+    { id: 28, sl_no: 28, roll: "23GK1A0554", name: "MD.SHOIAB", year: "4TH B.TECH", branch: "CSE" },
+    { id: 29, sl_no: 29, roll: "23GK1A0557", name: "SK.SALAR", year: "4TH B.TECH", branch: "CSE" },
+    { id: 30, sl_no: 30, roll: "23GK1A0558", name: "J.SREE DEVI", year: "4TH B.TECH", branch: "CSE" },
+    { id: 31, sl_no: 31, roll: "24GK1A0501", name: "N.ARJUN", year: "4TH B.TECH", branch: "CSE (LATERAL)" }
+  ];
+
+  // Book Catalog
+  const INITIAL_BOOKS = [
+    { id: 1, isbn: "978-0132350884", title: "Clean Code: Agile Craftsmanship", author: "Robert C. Martin", category: "Software Engineering", total: 6, avail: 5, shelf: "Shelf A-101" },
+    { id: 2, isbn: "978-0262033848", title: "Introduction to Algorithms (CLRS 4th Ed)", author: "Thomas H. Cormen", category: "Algorithms & DS", total: 8, avail: 5, shelf: "Shelf A-102" },
+    { id: 3, isbn: "978-0131103627", title: "The C Programming Language (2nd Ed)", author: "Brian W. Kernighan", category: "Programming", total: 5, avail: 4, shelf: "Shelf B-201" },
+    { id: 4, isbn: "978-0134685991", title: "Effective Java (3rd Edition)", author: "Joshua Bloch", category: "Java", total: 7, avail: 6, shelf: "Shelf B-202" },
+    { id: 5, isbn: "978-0136083207", title: "Artificial Intelligence: Modern Approach", author: "Stuart Russell, Peter Norvig", category: "AI & ML", total: 5, avail: 3, shelf: "Shelf C-301" },
+    { id: 6, isbn: "978-0078022159", title: "Database System Concepts (7th Edition)", author: "Abraham Silberschatz", category: "Databases", total: 9, avail: 7, shelf: "Shelf D-401" },
+    { id: 7, isbn: "978-0133594140", title: "Operating System Concepts (10th Ed)", author: "Silberschatz, Galvin", category: "Systems", total: 8, avail: 6, shelf: "Shelf D-402" },
+    { id: 8, isbn: "978-0132126953", title: "Computer Networks: Principles", author: "Andrew S. Tanenbaum", category: "Networking", total: 7, avail: 5, shelf: "Shelf E-501" },
+    { id: 9, isbn: "978-1491957660", title: "Designing Data-Intensive Applications", author: "Martin Kleppmann", category: "Distributed Systems", total: 6, avail: 5, shelf: "Shelf E-502" },
+    { id: 10, isbn: "978-1593279288", title: "Python Crash Course (3rd Edition)", author: "Eric Matthes", category: "Python", total: 10, avail: 8, shelf: "Shelf B-203" },
+    { id: 11, isbn: "978-1449355730", title: "Full Stack Web Development React & Node", author: "Jennifer Robbins", category: "Web Development", total: 6, avail: 5, shelf: "Shelf F-601" },
+    { id: 12, isbn: "978-1718502703", title: "Black Hat Python: Python for Hackers", author: "Justin Seitz", category: "Cybersecurity", total: 5, avail: 4, shelf: "Shelf F-602" },
+    { id: 13, isbn: "978-1492041139", title: "Deep Learning & Neural Networks", author: "Sebastian Raschka", category: "AI & ML", total: 6, avail: 5, shelf: "Shelf C-302" },
+    { id: 14, isbn: "978-0134494166", title: "Cloud Computing: Architecture & Services", author: "Thomas Erl", category: "Cloud", total: 5, avail: 4, shelf: "Shelf E-503" },
+    { id: 15, isbn: "978-0596517748", title: "JavaScript: The Good Parts", author: "Douglas Crockford", category: "Web Development", total: 4, avail: 3, shelf: "Shelf B-204" },
+    { id: 16, isbn: "978-0321751041", title: "The Art of Computer Programming (Vol 1)", author: "Donald E. Knuth", category: "CS Theory", total: 3, avail: 3, shelf: "Shelf A-103" }
+  ];
+
+  // Initial Loans / Issues
+  const today = new Date();
+  const fmtDate = (d) => d.toISOString().split('T')[0];
+  const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+
+  const INITIAL_ISSUES = [
+    { id: 1, book_id: 1, student_id: 1, issue_date: fmtDate(addDays(today, -5)), due_date: fmtDate(addDays(today, 9)), status: 'issued', fine: 0, paid: 0 },
+    { id: 2, book_id: 2, student_id: 2, issue_date: fmtDate(addDays(today, -4)), due_date: fmtDate(addDays(today, 10)), status: 'issued', fine: 0, paid: 0 },
+    { id: 3, book_id: 5, student_id: 4, issue_date: fmtDate(addDays(today, -8)), due_date: fmtDate(addDays(today, 6)), status: 'issued', fine: 0, paid: 0 },
+    { id: 4, book_id: 6, student_id: 6, issue_date: fmtDate(addDays(today, -2)), due_date: fmtDate(addDays(today, 12)), status: 'issued', fine: 0, paid: 0 },
+    { id: 5, book_id: 2, student_id: 17, issue_date: fmtDate(addDays(today, -20)), due_date: fmtDate(addDays(today, -6)), status: 'overdue', fine: 12.0, paid: 0 },
+    { id: 6, book_id: 6, student_id: 21, issue_date: fmtDate(addDays(today, -22)), due_date: fmtDate(addDays(today, -8)), status: 'overdue', fine: 16.0, paid: 0 },
+    { id: 7, book_id: 7, student_id: 28, issue_date: fmtDate(addDays(today, -18)), due_date: fmtDate(addDays(today, -4)), status: 'overdue', fine: 8.0, paid: 0 },
+    { id: 8, book_id: 3, student_id: 3, issue_date: fmtDate(addDays(today, -30)), due_date: fmtDate(addDays(today, -16)), return_date: fmtDate(addDays(today, -18)), status: 'returned', fine: 0, paid: 1 }
+  ];
+
+  // App State
+  let students = JSON.parse(localStorage.getItem('mayura_students')) || INITIAL_STUDENTS;
+  let books = JSON.parse(localStorage.getItem('mayura_books')) || INITIAL_BOOKS;
+  let issues = JSON.parse(localStorage.getItem('mayura_issues')) || INITIAL_ISSUES;
+  let currentIssueFilter = 'all';
+
+  function saveState() {
+    localStorage.setItem('mayura_students', JSON.stringify(students));
+    localStorage.setItem('mayura_books', JSON.stringify(books));
+    localStorage.setItem('mayura_issues', JSON.stringify(issues));
+    updateKPIs();
+  }
+
+  // Toast
+  function toast(msg) {
+    const t = document.getElementById('appToast');
+    t.innerHTML = `<span>🦚</span> <span>${msg}</span>`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  // Tab Switcher
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item-link').forEach(el => el.classList.remove('active'));
+
+    const targetView = document.getElementById(`view-${tabId}`);
+    const targetNav = document.getElementById(`nav-${tabId}`);
+    if (targetView) targetView.classList.add('active');
+    if (targetNav) targetNav.classList.add('active');
+
+    if (tabId === 'students') renderStudentsTable();
+    if (tabId === 'books') renderBooksGrid();
+    if (tabId === 'issues') renderIssuesTable();
+    if (tabId === 'dashboard') updateDashboard();
+  }
+
+  // Modal handlers
+  function openModal(id) { document.getElementById(id).classList.add('show'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+  // Render Students
+  function renderStudentsTable(filter = '') {
+    const q = filter.toLowerCase().trim();
+    const tbody = document.getElementById('studentsTbody');
+    tbody.innerHTML = '';
+
+    students.forEach(s => {
+      if (q && !s.name.toLowerCase().includes(q) && !s.roll.toLowerCase().includes(q) && !s.branch.toLowerCase().includes(q)) return;
+      
+      const activeCount = issues.filter(i => i.student_id === s.id && (i.status === 'issued' || i.status === 'overdue')).length;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="color: var(--text-muted); font-weight: 700;">${s.sl_no}</td>
+        <td><span class="tag-badge tag-gold" style="font-family: monospace;">${s.roll}</span></td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--peacock-blue), var(--peacock-teal)); display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 0.82rem; border: 1px solid var(--peacock-cyan);">
+              ${s.name.charAt(0)}
+            </div>
+            <div>
+              <div style="font-weight: 700; color: #fff;">${s.name}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary);">${s.roll.toLowerCase()}@college.edu.in</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="tag-badge tag-cyan">${s.year}</span></td>
+        <td><span class="tag-badge tag-emerald">${s.branch}</span></td>
+        <td>
+          ${activeCount > 0 ? `<span class="tag-badge tag-emerald"><i class="fa-solid fa-book"></i> ${activeCount} Active</span>` : `<span style="font-size: 0.78rem; color: var(--text-muted);">0 active loans</span>`}
+        </td>
+        <td style="text-align: right;">
+          <button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="showPass(${s.id})"><i class="fa-solid fa-id-card"></i> Digital Pass</button>
+          <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="openIssueForStudent(${s.id})"><i class="fa-solid fa-plus"></i> Issue</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Render Books
+  function renderBooksGrid() {
+    const q = (document.getElementById('bookSearchInput')?.value || '').toLowerCase().trim();
+    const cat = document.getElementById('bookCatFilter')?.value || 'all';
+    const grid = document.getElementById('booksGrid');
+    grid.innerHTML = '';
+
+    // Populate categories in dropdown
+    const catSet = new Set(books.map(b => b.category));
+    const catDropdown = document.getElementById('bookCatFilter');
+    if (catDropdown && catDropdown.options.length <= 1) {
+      catSet.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        catDropdown.appendChild(opt);
+      });
+    }
+
+    books.forEach(b => {
+      if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q) && !b.isbn.toLowerCase().includes(q)) return;
+      if (cat !== 'all' && b.category !== cat) return;
+
+      const card = document.createElement('div');
+      card.className = 'catalog-card';
+      card.innerHTML = `
+        <div>
+          <div style="display: flex; gap: 14px; margin-bottom: 1rem;">
+            <div style="width: 44px; height: 58px; border-radius: 6px; background: var(--grad-plumage); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #02121e; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0, 245, 212, 0.25);">
+              <i class="fa-solid fa-book-bookmark"></i>
+            </div>
+            <div>
+              <h4 style="font-size: 1rem; color: #fff; font-weight: 700; line-height: 1.3; margin-bottom: 4px;">${b.title}</h4>
+              <div style="font-size: 0.82rem; color: var(--peacock-cyan);"><i class="fa-solid fa-feather"></i> ${b.author}</div>
+              <div style="margin-top: 6px;"><span class="tag-badge tag-cyan">${b.category}</span></div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid rgba(0, 245, 212, 0.1); border-bottom: 1px solid rgba(0, 245, 212, 0.1); margin-bottom: 1rem; font-size: 0.78rem; color: var(--text-secondary);">
+            <span><i class="fa-solid fa-barcode"></i> ${b.isbn}</span>
+            <span><i class="fa-solid fa-location-dot"></i> ${b.shelf}</span>
+          </div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Stock Status:</span>
+            ${b.avail > 0 ? `<span class="tag-badge tag-emerald"><i class="fa-solid fa-check"></i> ${b.avail} / ${b.total} Available</span>` : `<span class="tag-badge tag-crimson"><i class="fa-solid fa-xmark"></i> Out of Stock</span>`}
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-ui btn-ui-primary btn-ui-sm" style="flex: 1;" ${b.avail <= 0 ? 'disabled style="opacity:0.5"' : ''} onclick="openIssueForBook(${b.id})">
+              <i class="fa-solid fa-paper-plane"></i> Issue Book
+            </button>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  // Render Issues Table
+  function filterIssues(status) {
+    currentIssueFilter = status;
+    ['all', 'issued', 'overdue', 'returned'].forEach(s => {
+      const btn = document.getElementById(`flt-${s}`);
+      if (btn) btn.className = `btn-ui btn-ui-sm ${s === status ? 'btn-ui-primary' : 'btn-ui-secondary'}`;
+    });
+    renderIssuesTable();
+  }
+
+  function renderIssuesTable() {
+    const q = (document.getElementById('issueSearchInput')?.value || '').toLowerCase().trim();
+    const tbody = document.getElementById('issuesTbody');
+    tbody.innerHTML = '';
+
+    issues.forEach(iss => {
+      if (currentIssueFilter !== 'all' && iss.status !== currentIssueFilter) return;
+
+      const student = students.find(s => s.id === iss.student_id) || { name: 'Unknown', roll: 'N/A', branch: 'CSE' };
+      const book = books.find(b => b.id === iss.book_id) || { title: 'Unknown Book', shelf: 'Main' };
+
+      if (q && !student.name.toLowerCase().includes(q) && !student.roll.toLowerCase().includes(q) && !book.title.toLowerCase().includes(q)) return;
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td style="font-family: monospace; color: var(--peacock-cyan); font-weight: 700;">#LN-${iss.id}</td>
+        <td>
+          <div style="font-weight: 700; color: #fff;">${student.name}</div>
+          <div style="font-size: 0.75rem; font-family: monospace; color: var(--peacock-gold);">${student.roll} • ${student.branch}</div>
+        </td>
+        <td>
+          <div style="font-weight: 600; color: #fff;">${book.title}</div>
+          <div style="font-size: 0.72rem; color: var(--peacock-teal);"><i class="fa-solid fa-location-dot"></i> ${book.shelf}</div>
+        </td>
+        <td style="font-size: 0.82rem;">${iss.issue_date}</td>
+        <td style="font-size: 0.82rem; font-weight: 600; ${iss.status === 'overdue' ? 'color: var(--peacock-crimson); font-weight: 800;' : ''}">${iss.due_date}</td>
+        <td>
+          ${iss.status === 'issued' ? '<span class="tag-badge tag-cyan"><i class="fa-solid fa-circle" style="font-size: 5px;"></i> Active</span>' : (iss.status === 'overdue' ? '<span class="tag-badge tag-crimson"><i class="fa-solid fa-triangle-exclamation"></i> Overdue</span>' : '<span class="tag-badge tag-emerald"><i class="fa-solid fa-check"></i> Returned</span>')}
+        </td>
+        <td>
+          ${iss.fine > 0 ? `<strong>₹${iss.fine.toFixed(1)}</strong> ${iss.paid ? '<span class="tag-badge tag-emerald" style="font-size:0.6rem;">Paid</span>' : `<button class="btn-ui btn-ui-gold btn-ui-sm" style="padding:2px 6px; font-size:0.68rem;" onclick="payFineAction(${iss.id})">Pay</button>`}` : '<span style="color:var(--text-muted);">-</span>'}
+        </td>
+        <td style="text-align: right;">
+          ${iss.status !== 'returned' ? `
+            <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="returnBookAction(${iss.id})"><i class="fa-solid fa-check"></i> Return</button>
+            <button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="renewBookAction(${iss.id})"><i class="fa-solid fa-arrows-rotate"></i> Renew</button>
+          ` : '<span style="font-size:0.78rem; color:var(--peacock-emerald); font-weight:700;"><i class="fa-solid fa-clipboard-check"></i> Restocked</span>'}
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Issue Actions
+  function openIssueModal() {
+    const sSelect = document.getElementById('modalStudentSelect');
+    sSelect.innerHTML = '<option value="">-- Choose Student by Roll No / Name --</option>';
+    students.forEach(s => {
+      sSelect.innerHTML += `<option value="${s.id}">${s.roll} - ${s.name} (${s.branch})</option>`;
+    });
+
+    const bSelect = document.getElementById('modalBookSelect');
+    bSelect.innerHTML = '<option value="">-- Choose Book --</option>';
+    books.forEach(b => {
+      bSelect.innerHTML += `<option value="${b.id}" ${b.avail <= 0 ? 'disabled' : ''}>${b.title} (${b.avail}/${b.total} copies left)</option>`;
+    });
+
+    openModal('quickIssueModal');
+  }
+
+  function openIssueForStudent(studentId) {
+    openIssueModal();
+    document.getElementById('modalStudentSelect').value = studentId;
+    previewSelectedStudent(studentId);
+  }
+
+  function openIssueForBook(bookId) {
+    openIssueModal();
+    document.getElementById('modalBookSelect').value = bookId;
+    previewSelectedBook(bookId);
+  }
+
+  function previewSelectedStudent(sid) {
+    const box = document.getElementById('modalStudentPreview');
+    const s = students.find(x => x.id == sid);
+    if (!s) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    box.innerHTML = `<span style="color: #fff; font-weight: 700;">${s.name}</span> <span style="color: var(--peacock-gold);">(${s.roll} • ${s.branch})</span>`;
+  }
+
+  function previewSelectedBook(bid) {
+    const box = document.getElementById('modalBookPreview');
+    const b = books.find(x => x.id == bid);
+    if (!b) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    box.innerHTML = `<span style="color: var(--peacock-emerald); font-weight: 700;">Location: ${b.shelf}</span> • <span>${b.avail} copies in stock</span>`;
+  }
+
+  function handleIssueSubmit(e) {
+    e.preventDefault();
+    const sid = parseInt(document.getElementById('modalStudentSelect').value);
+    const bid = parseInt(document.getElementById('modalBookSelect').value);
+    const days = parseInt(document.getElementById('modalLoanDays').value || 14);
+
+    const b = books.find(x => x.id === bid);
+    if (!b || b.avail <= 0) { alert('Book out of stock'); return; }
+
+    b.avail -= 1;
+    const newId = issues.length > 0 ? Math.max(...issues.map(i => i.id)) + 1 : 1;
+    const issDate = fmtDate(today);
+    const dueDate = fmtDate(addDays(today, days));
+
+    issues.unshift({ id: newId, book_id: bid, student_id: sid, issue_date: issDate, due_date: dueDate, status: 'issued', fine: 0, paid: 0 });
+    saveState();
+    closeModal('quickIssueModal');
+    toast(`Book successfully issued! Due date: ${dueDate}`);
+    renderIssuesTable();
+    renderBooksGrid();
+    renderStudentsTable();
+  }
+
+  function returnBookAction(id) {
+    const iss = issues.find(i => i.id === id);
+    if (!iss) return;
+    iss.status = 'returned';
+    iss.return_date = fmtDate(today);
+    const b = books.find(x => x.id === iss.book_id);
+    if (b) b.avail += 1;
+    saveState();
+    toast('Book marked returned and restocked in inventory!');
+    renderIssuesTable();
+    renderBooksGrid();
+    renderStudentsTable();
+  }
+
+  function renewBookAction(id) {
+    const iss = issues.find(i => i.id === id);
+    if (!iss) return;
+    const currDue = new Date(iss.due_date);
+    const newDue = fmtDate(addDays(currDue, 14));
+    iss.due_date = newDue;
+    iss.status = 'issued';
+    iss.fine = 0;
+    saveState();
+    toast(`Loan renewed! New due date: ${newDue}`);
+    renderIssuesTable();
+  }
+
+  function payFineAction(id) {
+    const iss = issues.find(i => i.id === id);
+    if (!iss) return;
+    iss.paid = 1;
+    saveState();
+    toast('Fine paid and receipt recorded.');
+    renderIssuesTable();
+  }
+
+  // Digital Library Pass
+  function showPass(sid) {
+    const s = students.find(x => x.id === sid);
+    if (!s) return;
+    document.getElementById('passStudentName').textContent = s.name;
+    document.getElementById('passRollNumber').textContent = s.roll;
+    document.getElementById('passBranch').textContent = s.branch;
+    document.getElementById('passYear').textContent = s.year;
+    document.getElementById('passAvatarInitial').textContent = s.name.charAt(0);
+    document.getElementById('passEmail').textContent = `${s.roll.toLowerCase()}@college.edu.in`;
+    document.getElementById('passPhone').textContent = `+91 98480200${s.sl_no < 10 ? '0' + s.sl_no : s.sl_no}`;
+    document.getElementById('passBarcode').textContent = `*${s.roll}*`;
+
+    const activeList = issues.filter(i => i.student_id === s.id && (i.status === 'issued' || i.status === 'overdue'));
+    const container = document.getElementById('passActiveLoans');
+    if (activeList.length > 0) {
+      container.innerHTML = activeList.map(i => {
+        const bk = books.find(b => b.id === i.book_id);
+        return `<div style="padding: 4px 8px; background: rgba(0, 245, 212, 0.08); border-radius: 4px; margin-bottom: 4px; font-size: 0.75rem; display: flex; justify-content: space-between;">
+          <span>📚 ${bk ? bk.title : 'Book'}</span> <span style="color: var(--peacock-gold);">Due: ${i.due_date}</span>
+        </div>`;
+      }).join('');
+    } else {
+      container.innerHTML = '<span style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">No active books currently borrowed.</span>';
+    }
+
+    openModal('studentCardModal');
+  }
+
+  // Dashboard update
+  function updateDashboard() {
+    updateKPIs();
+    renderRecentTable();
+  }
+
+  function updateKPIs() {
+    document.getElementById('kpiBooks').textContent = books.length;
+    const totCopies = books.reduce((a, b) => a + b.total, 0);
+    const availCopies = books.reduce((a, b) => a + b.avail, 0);
+    document.getElementById('kpiTotalCopies').textContent = `${totCopies} total copies`;
+    document.getElementById('kpiAvailCopies').textContent = availCopies;
+
+    const activeCount = issues.filter(i => i.status === 'issued').length;
+    const overdueCount = issues.filter(i => i.status === 'overdue').length;
+    const totalFines = issues.filter(i => i.status === 'overdue' && !i.paid).reduce((a, b) => a + b.fine, 0);
+
+    document.getElementById('kpiActiveLoans').textContent = activeCount;
+    document.getElementById('kpiOverdue').textContent = overdueCount;
+    document.getElementById('kpiFines').textContent = `₹${totalFines.toFixed(1)} fines`;
+    document.getElementById('navActiveCount').textContent = overdueCount + activeCount;
+  }
+
+  function renderRecentTable() {
+    const tbody = document.getElementById('dashRecentTbody');
+    tbody.innerHTML = '';
+    issues.slice(0, 6).forEach(iss => {
+      const student = students.find(s => s.id === iss.student_id) || { name: 'Unknown', roll: 'N/A', branch: 'CSE' };
+      const book = books.find(b => b.id === iss.book_id) || { title: 'Unknown Book', category: 'General' };
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-family: monospace; color: var(--peacock-cyan); font-weight: 700;">#LN-${iss.id}</td>
+        <td>
+          <div style="font-weight: 700; color: #fff;">${student.name}</div>
+          <div style="font-size: 0.75rem; color: var(--peacock-gold); font-family: monospace;">${student.roll} • ${student.branch}</div>
+        </td>
+        <td>
+          <div style="font-weight: 600; color: #fff;">${book.title}</div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary);">${book.category}</div>
+        </td>
+        <td style="font-size: 0.82rem;">${iss.issue_date}</td>
+        <td style="font-size: 0.82rem; font-weight: 600; ${iss.status === 'overdue' ? 'color: var(--peacock-crimson); font-weight: 800;' : ''}">${iss.due_date}</td>
+        <td>
+          ${iss.status === 'issued' ? '<span class="tag-badge tag-cyan">Active</span>' : (iss.status === 'overdue' ? '<span class="tag-badge tag-crimson">Overdue</span>' : '<span class="tag-badge tag-emerald">Returned</span>')}
+        </td>
+        <td>${iss.fine > 0 ? `₹${iss.fine.toFixed(1)}` : '-'}</td>
+        <td style="text-align: right;">
+          ${iss.status !== 'returned' ? `<button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="returnBookAction(${iss.id})">Return</button>` : '<span style="font-size:0.75rem; color:var(--peacock-emerald);">Done</span>'}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // CSV Exports
+  function downloadCSV(filename, text) {
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  }
+
+  function exportStudentsCSV() {
+    let csv = "Sl.No,Roll Number,Student Name,Year of Study,Branch\n";
+    students.forEach(s => { csv += `"${s.sl_no}","${s.roll}","${s.name}","${s.year}","${s.branch}"\n`; });
+    downloadCSV('cse_students_roster_31.csv', csv);
+    toast('Downloaded Student Roster CSV!');
+  }
+
+  function exportBooksCSV() {
+    let csv = "ISBN,Title,Author,Category,Total,Available,Shelf\n";
+    books.forEach(b => { csv += `"${b.isbn}","${b.title}","${b.author}","${b.category}",${b.total},${b.avail},"${b.shelf}"\n`; });
+    downloadCSV('library_books_inventory.csv', csv);
+    toast('Downloaded Books Inventory CSV!');
+  }
+
+  function exportIssuesCSV() {
+    let csv = "Loan ID,Student Roll,Book Title,Issue Date,Due Date,Status,Fine\n";
+    issues.forEach(i => {
+      const s = students.find(x => x.id === i.student_id) || { roll: '' };
+      const b = books.find(x => x.id === i.book_id) || { title: '' };
+      csv += `${i.id},"${s.roll}","${b.title}","${i.issue_date}","${i.due_date}","${i.status}",${i.fine}\n`;
+    });
+    downloadCSV('library_transactions_export.csv', csv);
+    toast('Downloaded Transactions CSV!');
+  }
+
+  // Global search
+  function filterAll(val) {
+    renderStudentsTable(val);
+    document.getElementById('bookSearchInput').value = val;
+    renderBooksGrid();
+    document.getElementById('issueSearchInput').value = val;
+    renderIssuesTable();
+  }
+
+  // Init
+  window.addEventListener('DOMContentLoaded', () => {
+    updateDashboard();
+    renderStudentsTable();
+    renderBooksGrid();
+    renderIssuesTable();
+
+    // Init Charts
+    const catCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(catCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Algorithms', 'Software Eng', 'Systems', 'AI & ML', 'Databases', 'Networking', 'Python'],
+        datasets: [{
+          data: [2, 2, 2, 2, 2, 2, 2],
+          backgroundColor: ['#00f5d4', '#0077b6', '#02c39a', '#ffd166', '#7209b7', '#4361ee', '#f77f00'],
+          borderColor: '#020b14',
+          borderWidth: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { color: '#94d2bd', font: { size: 10, family: 'Plus Jakarta Sans' }, boxWidth: 10 } }
+        },
+        cutout: '68%'
+      }
+    });
+
+    const circCtx = document.getElementById('circulationChart').getContext('2d');
+    new Chart(circCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Available Stock', 'Active Loans', 'Overdue Loans', 'Returned Logs'],
+        datasets: [{
+          data: [86, 7, 3, 1],
+          backgroundColor: ['rgba(2, 195, 154, 0.8)', 'rgba(0, 180, 216, 0.8)', 'rgba(239, 71, 111, 0.8)', 'rgba(114, 9, 183, 0.8)'],
+          borderColor: ['#02c39a', '#00b4d8', '#ef476f', '#7209b7'],
+          borderWidth: 1.5,
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#94d2bd', font: { size: 10 } }, grid: { display: false } },
+          y: { ticks: { color: '#94d2bd' }, grid: { color: 'rgba(0, 245, 212, 0.08)' } }
+        }
+      }
+    });
+  });
+</script>
+</body>
+</html>

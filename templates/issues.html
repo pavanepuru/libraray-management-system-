@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Issue & Return Desk - Mayura LMS{% endblock %}
+
+{% block content %}
+<div class="glass-panel">
+  <div class="panel-header">
+    <div>
+      <div class="panel-heading">
+        <i class="fa-solid fa-arrow-right-arrow-left" style="color: var(--peacock-cyan);"></i>
+        <span>Circulation Desk • Issue & Return Management</span>
+      </div>
+      <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px;">
+        Track borrowings, enforce due dates, record returns, and collect overdue fines
+      </div>
+    </div>
+    <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="openModal('quickIssueModal')">
+      <i class="fa-solid fa-plus-circle"></i> Issue New Book
+    </button>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="toolbar-row">
+    <div class="peacock-searchbox">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="issueSearch" placeholder="Search by Roll No, Student Name, or Book Title...">
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <a href="{{ url_for('issues', status='all') }}" class="btn-ui btn-ui-sm {% if current_filter == 'all' %}btn-ui-primary{% else %}btn-ui-secondary{% endif %}">
+        All ({{ total_count }})
+      </a>
+      <a href="{{ url_for('issues', status='active') }}" class="btn-ui btn-ui-sm {% if current_filter == 'active' %}btn-ui-primary{% else %}btn-ui-secondary{% endif %}">
+        Active ({{ active_count }})
+      </a>
+      <a href="{{ url_for('issues', status='overdue') }}" class="btn-ui btn-ui-sm {% if current_filter == 'overdue' %}btn-ui-primary{% else %}btn-ui-secondary{% endif %}">
+        Overdue ({{ overdue_count }})
+      </a>
+      <a href="{{ url_for('issues', status='returned') }}" class="btn-ui btn-ui-sm {% if current_filter == 'returned' %}btn-ui-primary{% else %}btn-ui-secondary{% endif %}">
+        Returned ({{ returned_count }})
+      </a>
+    </div>
+  </div>
+
+  <!-- Transactions Table -->
+  <div class="table-wrap">
+    <table class="table-custom">
+      <thead>
+        <tr>
+          <th>Loan ID</th>
+          <th>Student Information</th>
+          <th>Book Title & Shelf</th>
+          <th>Issue Date</th>
+          <th>Due Date</th>
+          <th>Return Date</th>
+          <th>Status</th>
+          <th>Fine Status</th>
+          <th style="text-align: right;">Circulation Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in issues %}
+          <tr class="issue-row" 
+              data-roll="{{ row.roll_number|lower }}" 
+              data-student="{{ row.student_name|lower }}" 
+              data-book="{{ row.book_title|lower }}" 
+              data-status="{{ row.status|lower }}">
+            <td style="font-family: monospace; color: var(--peacock-cyan); font-weight: 700;">#LN-{{ row.id }}</td>
+            <td>
+              <div style="font-weight: 700; color: #ffffff;">{{ row.student_name }}</div>
+              <div style="font-size: 0.78rem; font-family: monospace; color: var(--peacock-gold);">{{ row.roll_number }} • {{ row.branch }}</div>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-primary);">{{ row.book_title }}</div>
+              <div style="font-size: 0.75rem; color: var(--peacock-teal);"><i class="fa-solid fa-location-dot"></i> {{ row.shelf_location }}</div>
+            </td>
+            <td style="font-size: 0.85rem;">{{ row.issue_date }}</td>
+            <td style="font-size: 0.85rem; font-weight: 600; {% if row.status == 'overdue' %}color: var(--peacock-crimson); font-weight: 800;{% endif %}">
+              {{ row.due_date }}
+            </td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);">
+              {{ row.return_date if row.return_date else '—' }}
+            </td>
+            <td>
+              {% if row.status == 'issued' %}
+                <span class="tag-badge tag-cyan"><i class="fa-solid fa-circle" style="font-size: 5px;"></i> Active</span>
+              {% elif row.status == 'overdue' %}
+                <span class="tag-badge tag-crimson"><i class="fa-solid fa-triangle-exclamation"></i> Overdue</span>
+              {% elif row.status == 'returned' %}
+                <span class="tag-badge tag-emerald"><i class="fa-solid fa-check"></i> Returned</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if row.fine_amount > 0 %}
+                <div>
+                  <strong style="color: var(--peacock-crimson);">₹{{ "%.1f"|format(row.fine_amount) }}</strong>
+                  {% if row.fine_paid %}
+                    <span class="tag-badge tag-emerald" style="font-size: 0.65rem;">Paid</span>
+                  {% else %}
+                    <button class="btn-ui btn-ui-gold btn-ui-sm" style="padding: 2px 7px; font-size: 0.72rem; margin-left: 4px;" onclick="payFine({{ row.id }})">
+                      Pay Fine
+                    </button>
+                  {% endif %}
+                </div>
+              {% else %}
+                <span style="color: var(--text-muted); font-size: 0.85rem;">₹0.00</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; gap: 6px;">
+                {% if row.status != 'returned' %}
+                  <button class="btn-ui btn-ui-primary btn-ui-sm" onclick="processReturn({{ row.id }})" title="Return Book">
+                    <i class="fa-solid fa-check"></i> Return
+                  </button>
+                  <button class="btn-ui btn-ui-secondary btn-ui-sm" onclick="processRenew({{ row.id }})" title="Extend Due Date by 14 Days">
+                    <i class="fa-solid fa-arrows-rotate"></i> Renew
+                  </button>
+                {% else %}
+                  <span style="font-size: 0.78rem; color: var(--peacock-emerald); font-weight: 600;">
+                    <i class="fa-solid fa-clipboard-check"></i> Restocked
+                  </span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

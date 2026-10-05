@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Mayura LMS - Peacock Edition{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/peacock_theme.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      .printable-card-area, .printable-card-area * { visibility: visible; }
+      .printable-card-area { position: absolute; left: 50%; top: 20%; transform: translateX(-50%); }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- Modern Left Sidebar -->
+  <aside class="app-sidebar no-print">
+    <a href="{{ url_for('dashboard') }}" class="sidebar-brand">
+      <img src="{{ url_for('static', filename='images/peacock_logo.svg') }}" alt="Peacock Logo" class="brand-icon">
+      <div>
+        <div class="brand-title">MAYURA LMS</div>
+        <div class="brand-badge">🦚 CSE LIBRARY</div>
+      </div>
+    </a>
+
+    <div class="sidebar-nav-title">Navigation</div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="{{ url_for('dashboard') }}" class="nav-item-link {% if active_page == 'dashboard' %}active{% endif %}">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('books') }}" class="nav-item-link {% if active_page == 'books' %}active{% endif %}">
+          <i class="fa-solid fa-book-bookmark"></i>
+          <span>Book Catalog</span>
+          <span class="badge-count">{{ all_books_quick|length }}</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('students') }}" class="nav-item-link {% if active_page == 'students' %}active{% endif %}">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>Students Roster</span>
+          <span class="badge-count">31</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('issues') }}" class="nav-item-link {% if active_page == 'issues' %}active{% endif %}">
+          <i class="fa-solid fa-arrow-right-arrow-left"></i>
+          <span>Issue & Return</span>
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('reports') }}" class="nav-item-link {% if active_page == 'reports' %}active{% endif %}">
+          <i class="fa-solid fa-file-invoice"></i>
+          <span>Reports & Export</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- Bottom Cohort Widget -->
+    <div class="sidebar-footer">
+      <div class="cohort-chip">
+        <div class="chip-avatar">4th</div>
+        <div>
+          <div class="chip-text">CSE Department</div>
+          <div class="chip-sub">31 Students Loaded</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- App Main Content Area -->
+  <div class="app-main">
+    <!-- Top Appbar -->
+    <header class="top-appbar no-print">
+      <div class="appbar-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Search catalog, students, transactions..." onkeyup="handleGlobalSearch(this.value)">
+      </div>
+
+      <div class="appbar-actions">
+        <span class="tag-badge tag-emerald">
+          <i class="fa-solid fa-circle" style="font-size: 6px;"></i> Offline SQLite Connected
+        </span>
+        <button class="btn-quick-issue" onclick="openModal('quickIssueModal')">
+          <i class="fa-solid fa-plus-circle"></i> Quick Issue
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Body -->
+    <main class="page-container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div style="margin-bottom: 1.5rem;" class="no-print">
+            {% for category, message in messages %}
+              <div style="padding: 12px 20px; border-radius: 12px; margin-bottom: 10px; background: {% if category == 'danger' %}rgba(239, 71, 111, 0.2){% else %}rgba(0, 245, 212, 0.15){% endif %}; border: 1px solid {% if category == 'danger' %}var(--peacock-crimson){% else %}var(--peacock-cyan){% endif %}; color: #fff; display: flex; align-items: center; gap: 10px;">
+                <span>{% if category == 'danger' %}⚠️{% else %}🦚{% endif %}</span>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<!-- Global Quick Issue Modal -->
+<div id="quickIssueModal" class="modal-overlay no-print">
+  <div class="modal-dialog">
+    <button class="modal-close" onclick="closeModal('quickIssueModal')">&times;</button>
+    <div style="margin-bottom: 1.2rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.8rem;">
+      <h3 style="font-size: 1.3rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-feather-pointed" style="color: var(--peacock-gold);"></i>
+        <span>Issue Book to Student</span>
+      </h3>
+    </div>
+    <form action="{{ url_for('api_issue_book') }}" method="POST">
+      <div style="margin-bottom: 1.2rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 6px;">
+          <i class="fa-solid fa-user-graduate"></i> Select Student (From Class Sheet)
+        </label>
+        <select name="student_id" class="peacock-dropdown" style="width: 100%; border-radius: var(--radius-sm);" required onchange="updateStudentPreview(this)">
+          <option value="">-- Choose Student by Roll No / Name --</option>
+          {% for s in all_students_quick %}
+            <option value="{{ s.id }}" data-name="{{ s.name }}" data-branch="{{ s.branch }}" data-year="{{ s.year_of_study }}">
+              {{ s.roll_number }} - {{ s.name }} ({{ s.branch }})
+            </option>
+          {% endfor %}
+        </select>
+        <div id="studentPreviewBox" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0, 245, 212, 0.05); border-radius: 8px; border: 1px dashed rgba(0, 245, 212, 0.3);"></div>
+      </div>
+
+      <div style="margin-bottom: 1.2rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 6px;">
+          <i class="fa-solid fa-book"></i> Select Book from Catalog
+        </label>
+        <select name="book_id" class="peacock-dropdown" style="width: 100%; border-radius: var(--radius-sm);" required onchange="updateBookPreview(this)">
+          <option value="">-- Choose Book --</option>
+          {% for b in all_books_quick %}
+            <option value="{{ b.id }}" data-avail="{{ b.available_copies }}" data-shelf="{{ b.shelf_location }}" {% if b.available_copies <= 0 %}disabled{% endif %}>
+              {{ b.title }} (Copies: {{ b.available_copies }}/{{ b.total_copies }})
+            </option>
+          {% endfor %}
+        </select>
+        <div id="bookPreviewBox" style="display: none; margin-top: 10px; padding: 10px; background: rgba(0, 245, 212, 0.05); border-radius: 8px; border: 1px dashed rgba(0, 245, 212, 0.3);"></div>
+      </div>
+
+      <div style="margin-bottom: 1.2rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 6px;">
+          <i class="fa-regular fa-calendar-days"></i> Loan Period
+        </label>
+        <select name="loan_days" class="peacock-dropdown" style="width: 100%; border-radius: var(--radius-sm);">
+          <option value="14" selected>Standard 14 Days</option>
+          <option value="21">Extended 21 Days (Semester Reference)</option>
+          <option value="7">Short-term 7 Days (Lab reference)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 1.2rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--peacock-cyan); margin-bottom: 6px;">
+          <i class="fa-solid fa-pencil"></i> Remarks / Notes (Optional)
+        </label>
+        <input type="text" name="remarks" class="peacock-searchbox" style="width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); background: var(--bg-input); color: #fff;" placeholder="e.g. Major Project study, Lab coursework">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem;">
+        <button type="button" class="btn-ui btn-ui-secondary" onclick="closeModal('quickIssueModal')">Cancel</button>
+        <button type="submit" class="btn-ui btn-ui-primary"><i class="fa-solid fa-check"></i> Issue Book</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Global Digital Student Library Card Modal -->
+<div id="studentCardModal" class="modal-overlay">
+  <div class="modal-dialog" style="max-width: 500px;">
+    <button class="modal-close no-print" onclick="closeModal('studentCardModal')">&times;</button>
+    <div class="no-print" style="margin-bottom: 1.2rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.6rem;">
+      <h3 style="font-size: 1.2rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-id-badge" style="color: var(--peacock-gold);"></i> Digital Library Pass
+      </h3>
+    </div>
+    
+    <div class="printable-card-area">
+      <div class="pvc-library-pass">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 245, 212, 0.2); padding-bottom: 0.8rem; margin-bottom: 1.2rem;">
+          <div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--peacock-gold); letter-spacing: 1px; text-transform: uppercase;">
+              DEPARTMENT OF CSE • LIBRARY CARD
+            </div>
+            <div style="font-size: 0.65rem; color: var(--peacock-teal);">4TH B.TECH OFFICIAL MEMBER PASS</div>
+          </div>
+          <div class="tag-badge tag-cyan">VERIFIED</div>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 1.2rem;">
+          <div style="width: 72px; height: 84px; border-radius: 10px; background: linear-gradient(135deg, #005082, #0077b6); border: 2px solid var(--peacock-gold); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: #ffd166; font-weight: 800;">
+            <span id="cardAvatarInitial">A</span>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase;">Student Name</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: #fff;" id="cardStudentName">A.RAJESH</div>
+            
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; margin-top: 4px;">Roll Number</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: var(--peacock-gold); font-family: monospace;" id="cardRollNumber">23GK1A0501</div>
+
+            <div style="display: flex; gap: 14px; margin-top: 4px;">
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-secondary);">Branch</div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: #fff;" id="cardBranch">CSE</div>
+              </div>
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-secondary);">Year</div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: #fff;" id="cardYear">4TH B.TECH</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px;">
+          <div><i class="fa-solid fa-envelope" style="color: var(--peacock-cyan); width: 16px;"></i> <span id="cardEmail"></span></div>
+          <div><i class="fa-solid fa-phone" style="color: var(--peacock-gold); width: 16px;"></i> <span id="cardPhone"></span></div>
+        </div>
+
+        <div style="margin-top: 12px; border-top: 1px dashed rgba(0, 245, 212, 0.25); padding-top: 8px;">
+          <div style="font-size: 0.68rem; color: var(--peacock-teal); font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Current Active Borrows</div>
+          <div id="cardActiveLoans"></div>
+        </div>
+
+        <div style="background: #ffffff; border-radius: 6px; padding: 6px 10px; text-align: center; margin-top: 1rem;">
+          <div style="height: 30px; background: repeating-linear-gradient(90deg, #000 0px, #000 2px, #fff 2px, #fff 4px, #000 4px, #000 7px, #fff 7px, #fff 9px); margin-bottom: 2px;"></div>
+          <div style="font-family: monospace; font-size: 0.75rem; font-weight: 700; color: #000;" id="cardBarcode">*23GK1A0501*</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem;" class="no-print">
+      <button type="button" class="btn-ui btn-ui-secondary" onclick="closeModal('studentCardModal')">Close</button>
+      <button type="button" class="btn-ui btn-ui-gold" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Pass</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+  function handleGlobalSearch(q) {
+    // If on books page or students page, trigger filter
+    const bs = document.getElementById('bookSearch');
+    const ss = document.getElementById('studentSearch');
+    const is = document.getElementById('issueSearch');
+    if (bs) { bs.value = q; bs.dispatchEvent(new Event('input')); }
+    if (ss) { ss.value = q; ss.dispatchEvent(new Event('input')); }
+    if (is) { is.value = q; is.dispatchEvent(new Event('input')); }
+  }
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
